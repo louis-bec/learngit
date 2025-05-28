@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
 const fs = require('fs');
-const FCS = require('fcs-parser');
+const { parseFCS } = require('fcs-parser');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -17,11 +17,10 @@ app.post('/upload', upload.single('fcsFile'), async (req, res) => {
   }
   try {
     const buffer = fs.readFileSync(req.file.path);
-    const fcs = new FCS(buffer);
-    const header = fcs.header;
+    const parsed = parseFCS(buffer);
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
-    res.json({ header });
+    res.json({ header: parsed.text });
   } catch (err) {
     res.status(500).json({ error: 'Failed to parse FCS file', details: err.message });
   }
