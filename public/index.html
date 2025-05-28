@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FCS File Header Viewer</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    .header-table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+    .header-table th, .header-table td { border: 1px solid #ccc; padding: 8px; }
+    .header-table th { background: #f0f0f0; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>FCS File Header Viewer</h1>
+  <form id="uploadForm">
+    <input type="file" id="fcsFile" name="fcsFile" accept=".fcs" required />
+    <button type="submit">Upload & View Header</button>
+  </form>
+  <div id="result"></div>
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('fcsFile');
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '';
+      if (!fileInput.files.length) return;
+      const formData = new FormData();
+      formData.append('fcsFile', fileInput.files[0]);
+      try {
+        const res = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.error) {
+          resultDiv.innerHTML = `<div class="error">${data.error}: ${data.details || ''}</div>`;
+        } else {
+          const header = data.header;
+          let html = '<h2>FCS Header</h2><table class="header-table"><tbody>';
+          for (const key in header) {
+            html += `<tr><th>${key}</th><td>${header[key]}</td></tr>`;
+          }
+          html += '</tbody></table>';
+          resultDiv.innerHTML = html;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="error">Failed to upload or parse file.</div>`;
+      }
+    });
+  </script>
+</body>
+</html>
