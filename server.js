@@ -18,10 +18,22 @@ app.post('/upload', upload.single('fcsFile'), async (req, res) => {
   try {
     const buffer = fs.readFileSync(req.file.path);
     const parsed = parseFCS(buffer);
-    // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
+    // Clean up uploaded file asynchronously and log errors if any
+    fs.unlink(req.file.path, (err) => {
+      if (err) {
+        console.error(`Failed to delete file: ${req.file.path}`, err);
+      }
+    });
     res.json({ header: parsed.text });
   } catch (err) {
+    // Attempt to clean up file even if parsing fails
+    if (req.file && req.file.path) {
+      fs.unlink(req.file.path, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error(`Failed to delete file after error: ${req.file.path}`, unlinkErr);
+        }
+      });
+    }
     res.status(500).json({ error: 'Failed to parse FCS file', details: err.message });
   }
 });
